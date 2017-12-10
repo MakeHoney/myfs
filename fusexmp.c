@@ -55,6 +55,7 @@ static struct {
 
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
+	puts("getattr");
   char fullpath[PATH_MAX];
 	int res;
 
@@ -62,6 +63,7 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
       rand() % 2 == 0 ? global_context.driveA : global_context.driveB, path);
 
 	res = lstat(fullpath, stbuf);
+	printf("%d\n", res);
 	if (res == -1)
 		return -errno;
 
@@ -70,6 +72,7 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 
 static int xmp_access(const char *path, int mask)
 {
+	puts("access");
   char fullpath[PATH_MAX];
 	int res;
 
@@ -85,6 +88,7 @@ static int xmp_access(const char *path, int mask)
 
 static int xmp_readlink(const char *path, char *buf, size_t size)
 {
+	puts("readlink");
   char fullpath[PATH_MAX];
 	int res;
 
@@ -104,6 +108,7 @@ static int xmp_readlink(const char *path, char *buf, size_t size)
 static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		       off_t offset, struct fuse_file_info *fi)
 {
+	puts("readdir");
   char fullpath[PATH_MAX];
 
 	DIR *dp;
@@ -135,6 +140,7 @@ static int xmp_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 {
+	puts("mknod");
   char fullpaths[2][PATH_MAX];
 	int res;
 
@@ -149,6 +155,8 @@ static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 
     if (S_ISREG(mode)) {
       res = open(fullpath, O_CREAT | O_EXCL | O_WRONLY, mode);
+	  // 파일이 없으면 파일을 생성하고, rw only, 모드는 stat구조체에 저장된
+	  // mode_t를 그대로 적용한다.
       if (res >= 0)
         res = close(res);
     } else if (S_ISFIFO(mode))
@@ -164,6 +172,7 @@ static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 
 static int xmp_mkdir(const char *path, mode_t mode)
 {
+	puts("mkdir");
   char fullpaths[2][PATH_MAX];
 	int res;
 
@@ -183,6 +192,7 @@ static int xmp_mkdir(const char *path, mode_t mode)
 
 static int xmp_unlink(const char *path)
 {
+	puts("unlink");
   char fullpaths[2][PATH_MAX];
 	int res;
 
@@ -201,6 +211,7 @@ static int xmp_unlink(const char *path)
 
 static int xmp_rmdir(const char *path)
 {
+	puts("rmdir");
   char fullpaths[2][PATH_MAX];
 	int res;
 
@@ -219,6 +230,7 @@ static int xmp_rmdir(const char *path)
 
 static int xmp_symlink(const char *from, const char *to)
 {
+	puts("symlink");
   char read_fullpath[PATH_MAX];
   char write_fullpaths[2][PATH_MAX];
   int res;
@@ -240,6 +252,7 @@ static int xmp_symlink(const char *from, const char *to)
 
 static int xmp_rename(const char *from, const char *to)
 {
+	puts("rename");
   char read_fullpath[PATH_MAX];
   char write_fullpaths[2][PATH_MAX];
   int res;
@@ -261,6 +274,7 @@ static int xmp_rename(const char *from, const char *to)
 
 static int xmp_link(const char *from, const char *to)
 {
+	puts("link");
   char read_fullpath[PATH_MAX];
   char write_fullpaths[2][PATH_MAX];
   int res;
@@ -282,6 +296,7 @@ static int xmp_link(const char *from, const char *to)
 
 static int xmp_chmod(const char *path, mode_t mode)
 {
+	puts("chmod");
   char fullpaths[2][PATH_MAX];
   int res;
 
@@ -299,6 +314,7 @@ static int xmp_chmod(const char *path, mode_t mode)
 
 static int xmp_chown(const char *path, uid_t uid, gid_t gid)
 {
+	puts("chown");
   char fullpaths[2][PATH_MAX];
   int res;
 
@@ -316,6 +332,7 @@ static int xmp_chown(const char *path, uid_t uid, gid_t gid)
 
 static int xmp_truncate(const char *path, off_t size)
 {
+	puts("truncate");
   char fullpaths[2][PATH_MAX];
   int res;
 
@@ -334,6 +351,7 @@ static int xmp_truncate(const char *path, off_t size)
 #ifdef HAVE_UTIMENSAT
 static int xmp_utimens(const char *path, const struct timespec ts[2])
 {
+	puts("utimens");
   char fullpaths[2][PATH_MAX];
   int res;
 
@@ -353,6 +371,7 @@ static int xmp_utimens(const char *path, const struct timespec ts[2])
 
 static int xmp_open(const char *path, struct fuse_file_info *fi)
 {
+	puts("open");
   char fullpath[PATH_MAX];
   int res;
 
@@ -370,6 +389,7 @@ static int xmp_open(const char *path, struct fuse_file_info *fi)
 static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
     struct fuse_file_info *fi)
 {
+	puts("read");
   char fullpath[PATH_MAX];
   int fd;
   int res;
@@ -392,6 +412,7 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 static int xmp_write(const char *path, const char *buf, size_t size,
     off_t offset, struct fuse_file_info *fi)
 {
+	puts("write");
   char fullpaths[2][PATH_MAX];
   int fd;
   int res;
@@ -420,6 +441,7 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 
 static int xmp_statfs(const char *path, struct statvfs *stbuf)
 {
+	puts("statfs");
   char fullpath[PATH_MAX];
   int res;
 
@@ -434,6 +456,7 @@ static int xmp_statfs(const char *path, struct statvfs *stbuf)
 
 static int xmp_release(const char *path, struct fuse_file_info *fi)
 {
+	puts("release");
   /* Just a stub.	 This method is optional and can safely be left
      unimplemented */
 
@@ -445,6 +468,7 @@ static int xmp_release(const char *path, struct fuse_file_info *fi)
 static int xmp_fsync(const char *path, int isdatasync,
     struct fuse_file_info *fi)
 {
+	puts("fsync");
   /* Just a stub.	 This method is optional and can safely be left
      unimplemented */
 
@@ -458,6 +482,7 @@ static int xmp_fsync(const char *path, int isdatasync,
 static int xmp_fallocate(const char *path, int mode,
     off_t offset, off_t length, struct fuse_file_info *fi)
 {
+	puts("fallocate");
   char fullpaths[2][PATH_MAX];
   int fd;
   int res;
@@ -490,6 +515,7 @@ static int xmp_fallocate(const char *path, int mode,
 static int xmp_setxattr(const char *path, const char *name, const char *value,
     size_t size, int flags)
 {
+	puts("setxattr");
   char fullpaths[2][PATH_MAX];
 
   sprintf(fullpaths[0], "%s%s", global_context.driveA, path);
@@ -508,12 +534,19 @@ static int xmp_setxattr(const char *path, const char *name, const char *value,
 static int xmp_getxattr(const char *path, const char *name, char *value,
     size_t size)
 {
+	char list[500];
+	puts("getxattr");
   char fullpath[PATH_MAX];
 
   sprintf(fullpath, "%s%s",
       rand() % 2 == 0 ? global_context.driveA : global_context.driveB, path);
 
+ int a = llistxattr(fullpath, list, size);
+ printf("%d\n", a);
+
+ printf("%s", list);
   int res = lgetxattr(fullpath, name, value, size);
+  printf("%d\n", res);
   if (res == -1)
     return -errno;
   return res;
@@ -521,6 +554,7 @@ static int xmp_getxattr(const char *path, const char *name, char *value,
 
 static int xmp_listxattr(const char *path, char *list, size_t size)
 {
+	puts("listxattr");
   char fullpath[PATH_MAX];
 
   sprintf(fullpath, "%s%s",
@@ -534,6 +568,7 @@ static int xmp_listxattr(const char *path, char *list, size_t size)
 
 static int xmp_removexattr(const char *path, const char *name)
 {
+	puts("removexattr");
   char fullpaths[2][PATH_MAX];
 
   sprintf(fullpaths[0], "%s%s", global_context.driveA, path);
