@@ -491,9 +491,9 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 //			  res = pread(fd, buf, strlen(buf), offset);
 //		  else{
 //			  printf("flag\n");  여기 안들어옴
-		  	  res = pread(fd, buf, 5, offset);
+		  	  res = pread(fd, buf, 512, offset);
 			  printf("filled buffer : %s \n ", buf);
-			  buf += 5; // -> 이게 여기 왜필요해?
+			  buf += 512;
 //			  memset(buf, 0x00, strlen(buf));
 //		  }
 
@@ -505,7 +505,7 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 		  close(fd);
 		  resSum += res;
 	  }
-	  offset += 5;
+	  offset += 512;
   }
 
   return retSize;
@@ -541,11 +541,11 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 		  fd = open(fullpath, O_WRONLY);
 		  if(fd == -1)
 			  return -errno;
-		  if(strlen(buf) < 5)
+		  if(strlen(buf) < 512)
 			  res = pwrite(fd, buf, strlen(buf), offset);
 		  else {
-		  	res = pwrite(fd, buf, 5, offset);
-	   	    buf += 5;	// stripe 단위 씩 커짐
+		  	res = pwrite(fd, buf, 512, offset);
+	   	    buf += 512;	// stripe 단위 씩 커짐
 		  }
 
 	 	  printf("res : %d, resSum :%d\n", res, resSum);
@@ -556,7 +556,7 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 		  close(fd);
 		  resSum += res;
  	 }
-	  offset += 5;
+	  offset += 512;
   }
 //   truncate(mountPoint, size);
    return size;
