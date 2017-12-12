@@ -62,12 +62,12 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 {
 	puts("getattr");
   char fullpath[PATH_MAX];
-  char mnt[PATH_MAX];
-  struct stat stbuf2;
+//  char mnt[PATH_MAX];
+//  struct stat stbuf2;
 	int res;
-	int res2;
+//	int res2;
   sprintf(fullpath, "%s%s", global_context.driveA, path);
-  sprintf(mnt, "%s%s", global_context.mountPoint, path);
+//  sprintf(mnt, "%s%s", global_context.mountPoint, path);
   /*
   sprintf(fullpath, "%s%s",
       rand() % 2 == 0 ? global_context.driveA : global_context.driveB, path);
@@ -79,12 +79,12 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 
 	if(stbuf->st_ino == global_tmpNum.inode &&
 			stbuf->st_size != global_tmpNum.size){
-		printf("사이즈변경경\n");
+//		printf("사이즈변경경\n");
 		stbuf->st_size = global_tmpNum.size;
 	}
 
 	global_tmpNum.inode = stbuf->st_ino;
-
+/*
 
 	printf("-------------------------\n");
 	printf("st_dev :%d\n", stbuf->st_dev);
@@ -103,6 +103,7 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 	printf("-------------------------\n");
     printf("size :%ld\n", stbuf->st_size);
 	printf("%d\n", res);
+	*/
 	if (res == -1)
 		return -errno;
 
@@ -471,7 +472,7 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 
 //  for(int k = 0 ; k < 10 ; k++){
   while(resSum < size) {
-	  printf("resSum :%ld, offset : %ld, strlen(buf): %ld\n", resSum, offset, strlen(buf));
+//	  printf("resSum :%ld, offset : %ld, strlen(buf): %ld\n", resSum, offset, strlen(buf));
 	  for(int i = 0 ; i < 2 ; i++) {
 		  if(resSum >= size){
 			  printf("break1");
@@ -680,7 +681,7 @@ static int xmp_setxattr(const char *path, const char *name, const char *value,
 static int xmp_getxattr(const char *path, const char *name, char *value,
     size_t size)
 {
-	char list[500];
+//	char list[500];
 	puts("getxattr");
   char fullpath[PATH_MAX];
 
@@ -689,14 +690,14 @@ static int xmp_getxattr(const char *path, const char *name, char *value,
 
 
   int res = lgetxattr(fullpath, name, value, size);
-
+/*
   printf("---------------\n");
   printf("x_size : %d\n", size);
   printf("x_name : %s\n", name);
   printf("x_value : %s\n", value);
 printf("---------------\n");
 
-
+*/
   if (res == -1)
     return -errno;
   return res;
