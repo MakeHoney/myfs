@@ -47,45 +47,24 @@
 #endif
 #include <linux/limits.h>
 
-struct {
-	long unsigned int inode;
-	long unsigned int size;
-} global_tmpNum;
-
 static struct {
   char driveA[512];
   char driveB[512];
-  char mountPoint[512];
 } global_context;
 
 static int xmp_getattr(const char *path, struct stat *stbuf)
 {
 	puts("getattr");
-  char fullpath[PATH_MAX];
-//  char mnt[PATH_MAX];
-//  struct stat stbuf2;
+  char fullpaths[2][PATH_MAX];
+  struct stat tmpbuf;
 	int res;
-//	int res2;
-  sprintf(fullpath, "%s%s", global_context.driveA, path);
-//  sprintf(mnt, "%s%s", global_context.mountPoint, path);
-  /*
-  sprintf(fullpath, "%s%s",
-      rand() % 2 == 0 ? global_context.driveA : global_context.driveB, path);
-*/
+  sprintf(fullpaths[0], "%s%s", global_context.driveA, path);
+  sprintf(fullpaths[1], "%s%s", global_context.driveB, path);
+	res = lstat(fullpaths[0], stbuf);
+	lstat(fullpaths[1], &tmpbuf);
 
-
-	res = lstat(fullpath, stbuf);
-//	res2 = lstat(mnt, &stbuf2);
-
-	if(stbuf->st_ino == global_tmpNum.inode &&
-			stbuf->st_size != global_tmpNum.size){
-//		printf("사이즈변경경\n");
-		stbuf->st_size = global_tmpNum.size;
-	}
-
-	global_tmpNum.inode = stbuf->st_ino;
+	stbuf->st_size += tmpbuf.st_size;
 /*
-
 	printf("-------------------------\n");
 	printf("st_dev :%d\n", stbuf->st_dev);
 	printf("st_ino : %d\n", stbuf->st_ino);
@@ -99,11 +78,10 @@ static int xmp_getattr(const char *path, struct stat *stbuf)
 	printf("st_blocks : %d\n", stbuf->st_blocks);
 	printf("st_atime : %d\n", stbuf->st_atime);
 	printf("st_mtime : %d\n", stbuf->st_mtime);
-//	printf("st_xtime : %d\n", stbuf->st_xtime);
 	printf("-------------------------\n");
     printf("size :%ld\n", stbuf->st_size);
 	printf("%d\n", res);
-	*/
+*/	
 	if (res == -1)
 		return -errno;
 
@@ -195,8 +173,6 @@ static int xmp_mknod(const char *path, mode_t mode, dev_t rdev)
 
     if (S_ISREG(mode)) {
       res = open(fullpath, O_CREAT | O_EXCL | O_WRONLY, mode);
-	  // 파일이 없으면 파일을 생성하고, rw only, 모드는 stat구조체에 저장된
-	  // mode_t를 그대로 적용한다.
       if (res >= 0)
         res = close(res);
     } else if (S_ISFIFO(mode))
@@ -441,23 +417,17 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 {
 	puts("read");
   char fullpaths[2][PATH_MAX];
-  char mountPoint[PATH_MAX];
   int fd;
   int res;
   int resSum = 0;
   struct stat file_info;
   long unsigned int retSize = size;
-
-  /*
-  sprintf(fullpath, "%s%s",
-      rand() % 2 == 0 ? global_context.driveA : global_context.driveB, path);
-	  */
+  
   (void) fi;
 
-	printf("read offset : %ld\n", offset);
   sprintf(fullpaths[0], "%s%s", global_context.driveA, path);
   sprintf(fullpaths[1], "%s%s", global_context.driveB, path);
-  sprintf(mountPoint, "%s%s", global_context.mountPoint, path);
+  
   for(int i = 0 ; i < 2; i++){
 	  stat(fullpaths[i], &file_info);
 	  if(i == 0)
@@ -465,40 +435,30 @@ static int xmp_read(const char *path, char *buf, size_t size, off_t offset,
 	  else
 		  size += file_info.st_size;
   }
+  
   printf("file size :%ld\n", size);
   printf("what's in buf : %s\n ", buf);
 
-//  truncate(mountPoint, size);
-
-//  for(int k = 0 ; k < 10 ; k++){
+  printf("strlen : %d\n", strlen(buf));
+//  memset(buf, 0x00, 1024);
   while(resSum < size) {
-//	  printf("resSum :%ld, offset : %ld, strlen(buf): %ld\n", resSum, offset, strlen(buf));
 	  for(int i = 0 ; i < 2 ; i++) {
-		  if(resSum >= size){
-			  printf("break1");
+		  if(resSum >= size)
 			  break;
-		  }
 	
 		  const char* fullpath = fullpaths[i];
 	
 		  fd = open(fullpath, O_RDONLY);
-		  if (fd == -1){
-			  printf("file error");
+		  if (fd == -1)
 		  	  return -errno;
-		  }
-
-//		  if(strlen(buf) < 5)
-//			  res = pread(fd, buf, strlen(buf), offset);
-//		  else{
-//			  printf("flag\n");  여기 안들어옴
-		  	  res = pread(fd, buf, 512, offset);
+			  if(size < 512)
+				  res = pread(fd, buf, size, offset);
+			  else
+		  	  	res = pread(fd, buf, 512, offset);
 			  printf("filled buffer : %s \n ", buf);
 			  buf += 512;
-//			  memset(buf, 0x00, strlen(buf));
-//		  }
 
 		  if (res == -1){
-			  printf("res error");
  		   	 res = -errno;
 			 break;
 		  }
@@ -516,39 +476,36 @@ static int xmp_write(const char *path, const char *buf, size_t size,
 {
 	puts("write");
   char fullpaths[2][PATH_MAX];
-  char mountPoint[PATH_MAX];
   int fd;
   int res;
   int resSum = 0;
-//	char* buf = (char*)malloc(sizeof(char) * 3000);
-//	strcpy(buf, buf2);
+  size_t tmpSize = size;
   (void) fi;
-
-  global_tmpNum.size = size;
 
   sprintf(fullpaths[0], "%s%s", global_context.driveA, path);
   sprintf(fullpaths[1], "%s%s", global_context.driveB, path);
-  sprintf(mountPoint, "%s%s", global_context.mountPoint, path);
 
-
-
-   while(resSum < size) {
+  while(resSum < size) {
 	  for(int i = 0 ; i < 2 ; i++) { 
-		  printf("offset : %ld, size : %ld\n", offset, size);
 		  if(resSum >= size)
 			  break;
 		  const char* fullpath = fullpaths[i];
 		  fd = open(fullpath, O_WRONLY);
 		  if(fd == -1)
 			  return -errno;
-		  if(strlen(buf) < 512)
-			  res = pwrite(fd, buf, strlen(buf), offset);
+		  printf("write size :%ld\n", tmpSize);
+		  printf("stlen : %d\n" , strlen(buf));
+		  printf("stlens : %s\n", buf);
+		  if(tmpSize < 512){
+			  res = pwrite(fd, buf, tmpSize, offset);
+			  memset(buf, 0x00, tmpSize);
+		  }
 		  else {
 		  	res = pwrite(fd, buf, 512, offset);
 	   	    buf += 512;	// stripe 단위 씩 커짐
+			tmpSize -= 512;
+			memset(buf, 0x00, 512);
 		  }
-
-	 	  printf("res : %d, resSum :%d\n", res, resSum);
 		  if(res == -1){
 			  resSum = -errno;
 			  break;
@@ -558,32 +515,7 @@ static int xmp_write(const char *path, const char *buf, size_t size,
  	 }
 	  offset += 512;
   }
-//   truncate(mountPoint, size);
    return size;
-   /*
-   resSum =  size;
-  res = resSum;
-  return res;
-*/
-
-/*
-  
-  for (int i = 0; i < 2; ++i) {
-    const char* fullpath = fullpaths[i];
-
-    fd = open(fullpath, O_WRONLY);
-    if (fd == -1)
-      return -errno;
-
-    res = pwrite(fd, buf, size, offset);
-    if (res == -1)
-      res = -errno;
-
-    close(fd);
-  }
-
-  return res;
-  */
 }
 
 static int xmp_statfs(const char *path, struct statvfs *stbuf)
@@ -681,7 +613,6 @@ static int xmp_setxattr(const char *path, const char *name, const char *value,
 static int xmp_getxattr(const char *path, const char *name, char *value,
     size_t size)
 {
-//	char list[500];
 	puts("getxattr");
   char fullpath[PATH_MAX];
 
@@ -690,15 +621,7 @@ static int xmp_getxattr(const char *path, const char *name, char *value,
 
 
   int res = lgetxattr(fullpath, name, value, size);
-/*
-  printf("---------------\n");
-  printf("x_size : %d\n", size);
-  printf("x_name : %s\n", name);
-  printf("x_value : %s\n", value);
-printf("---------------\n");
-
-*/
-  if (res == -1)
+ if (res == -1)
     return -errno;
   return res;
 }
@@ -773,7 +696,6 @@ static struct fuse_operations xmp_oper = {
 
 int main(int argc, char *argv[])
 {
-	int temp;
   if (argc < 4) {
     fprintf(stderr, "usage: ./myfs <mount-point> <drive-A> <drive-B>\n");
     exit(1);
@@ -781,8 +703,6 @@ int main(int argc, char *argv[])
 
   strcpy(global_context.driveB, argv[--argc]);
   strcpy(global_context.driveA, argv[--argc]);
-  temp = argc;
-  strcpy(global_context.mountPoint, argv[--temp]);
   srand(time(NULL));
 
   umask(0);
